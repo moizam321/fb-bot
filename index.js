@@ -13,17 +13,12 @@ const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 const REDIRECT_URI = `${process.env.APP_BASE_URL}/auth/facebook/callback`;
 
 app.get('/', (req, res) => {
-  res.send(`
-    <div style="text-align:center;margin-top:100px;font-family:sans-serif;">
-      <h1>Facebook Page Bot</h1>
-      <p>Bot is Live and Ready!</p>
-      <a href="/auth/facebook" style="background:#1877f2;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:18px;">Login with Facebook</a>
-    </div>
-  `);
+  res.send('<div style="text-align:center;margin-top:100px;"><h1>Facebook Bot</h1><a href="/auth/facebook" style="background:#1877f2;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;">Login with Facebook</a></div>');
 });
 
 app.get('/auth/facebook', (req, res) => {
-  const url = `https://www.facebook.com/v25.0/dialog/oauth?client_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&scope=pages_show_list,pages_read_engagement,pages_manage_posts,pages_messaging&response_type=code`;
+  // Maine yahan se permissions kam kar di hain taaki error na aaye
+  const url = `https://www.facebook.com/v25.0/dialog/oauth?client_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&scope=public_profile&response_type=code`;
   res.redirect(url);
 });
 
@@ -32,13 +27,8 @@ app.get('/auth/facebook/callback', async (req, res) => {
   try {
     const tRes = await axios.get(`https://graph.facebook.com/v25.0/oauth/access_token?client_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&client_secret=${APP_SECRET}&code=${code}`);
     const uToken = tRes.data.access_token;
-    const pRes = await axios.get(`https://graph.facebook.com/v25.0/me/accounts?access_token=${uToken}`);
-    
-    let html = '<h2>Select your Page:</h2>';
-    pRes.data.data.forEach(page => {
-      html += `<p><b>${page.name}</b> - Token: <code style="background:#eee;">${page.access_token}</code></p>`;
-    });
-    res.send(html + '<br><p>Copy the token for your Page and add it to Render Environment Variables as FACEBOOK_PAGE_ACCESS_TOKEN</p>');
+    // Ab hum manually Token Explorer se nikalenge, is login se sirf connection check ho raha hai
+    res.send("<h1>Login Successful!</h1><p>Your connection is working. Now use Graph API Explorer to get the Page Token as we discussed before.</p>");
   } catch (e) { res.send("Login Error: " + e.message); }
 });
 
@@ -60,7 +50,7 @@ app.post('/webhook', async (req, res) => {
           try {
             await axios.post(`https://graph.facebook.com/v25.0/${commentId}/comments`, { message: 'Auto Reply: Thanks!' }, { params: { access_token: token } });
             await axios.post(`https://graph.facebook.com/v25.0/${pageId}/messages`, { recipient: { comment_id: commentId }, message: { text: 'Hi! We received your comment.' } }, { params: { access_token: token } });
-          } catch (err) { console.error('Error in reply'); }
+          } catch (err) { console.error('Error'); }
         }
       }
     }
